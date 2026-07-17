@@ -1,5 +1,8 @@
 # Tokenshare Tasklist
 ## Pending Tasks
+### <task> [Pending] Feature Request
+- Add obsticles
+### </task>
 ## WIP Tasks
 ## Completed Tasks
 ### <task> [Done] Create Initial Demo of Snake Game
