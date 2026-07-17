@@ -58,6 +58,7 @@ class SnakeGame:
     width: int
     rng: random.Random = field(default_factory=random.Random)
     snake: list[Point] = field(init=False)
+    obstacles: set[Point] = field(init=False)
     direction: Direction = field(default=RIGHT, init=False)
     food: Point | None = field(init=False)
     score: int = field(default=0, init=False)
@@ -69,7 +70,25 @@ class SnakeGame:
             raise ValueError("board must be at least 5 rows by 10 columns")
         row, col = self.height // 2, self.width // 2
         self.snake = [(row, col), (row, col - 1), (row, col - 2)]
+        self.obstacles = self._place_obstacles()
         self.food = self._place_food()
+
+    def _place_obstacles(self) -> set[Point]:
+        """Scatter obstacles while leaving room around the starting snake."""
+        head_row, head_col = self.snake[0]
+        safe = set(self.snake)
+        safe.update(
+            (head_row + row_delta, head_col + col_delta)
+            for row_delta, col_delta in (UP, DOWN, LEFT, RIGHT)
+        )
+        free = [
+            (row, col)
+            for row in range(1, self.height - 1)
+            for col in range(1, self.width - 1)
+            if (row, col) not in safe
+        ]
+        count = min(len(free), max(1, (self.height - 2) * (self.width - 2) // 40))
+        return set(self.rng.sample(free, count))
 
     @property
     def delay_ms(self) -> int:
@@ -85,7 +104,7 @@ class SnakeGame:
             (row, col)
             for row in range(1, self.height - 1)
             for col in range(1, self.width - 1)
-            if (row, col) not in self.snake
+            if (row, col) not in self.snake and (row, col) not in self.obstacles
         ]
         return self.rng.choice(free) if free else None
 
@@ -99,7 +118,14 @@ class SnakeGame:
         head = (row, col)
         eating = head == self.food
         body = self.snake if eating else self.snake[:-1]
-        if row <= 0 or row >= self.height - 1 or col <= 0 or col >= self.width - 1 or head in body:
+        if (
+            row <= 0
+            or row >= self.height - 1
+            or col <= 0
+            or col >= self.width - 1
+            or head in body
+            or head in self.obstacles
+        ):
             self.game_over = True
             return False
         self.snake.insert(0, head)
@@ -137,6 +163,8 @@ def draw(stdscr: curses.window, game: SnakeGame, highscores: list[int]) -> None:
     stdscr.addstr(game.height - 1, 0, "+" + "-" * (game.width - 2) + "+")
     if game.food is not None:
         stdscr.addch(game.food[0], game.food[1], "*")
+    for row, col in game.obstacles:
+        stdscr.addch(row, col, "#")
     for index, (row, col) in enumerate(game.snake):
         stdscr.addch(row, col, "@" if index == 0 else "o")
     stdscr.addstr(game.height, 0, "Arrows/WASD move | P pause | Q quit")

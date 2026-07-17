@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from snake import DOWN, LEFT, RIGHT, SnakeGame, load_highscores, pause_menu, save_highscore
+from snake import DOWN, LEFT, RIGHT, SnakeGame, draw, load_highscores, pause_menu, save_highscore
 
 
 class FakeScreen:
@@ -22,6 +22,23 @@ class FakeScreen:
 
     def getch(self):
         return next(self.keys)
+
+
+class RecordingScreen:
+    def __init__(self):
+        self.characters = []
+
+    def erase(self):
+        pass
+
+    def addstr(self, *_args):
+        pass
+
+    def addch(self, row, col, character):
+        self.characters.append((row, col, character))
+
+    def refresh(self):
+        pass
 
 
 class SnakeGameTests(unittest.TestCase):
@@ -48,6 +65,26 @@ class SnakeGameTests(unittest.TestCase):
         game.step()
         game.step()
         self.assertTrue(game.game_over)
+
+    def test_obstacles_do_not_overlap_start_or_food(self):
+        game = SnakeGame(10, 20, random.Random(1))
+        self.assertTrue(game.obstacles)
+        self.assertTrue(game.obstacles.isdisjoint(game.snake))
+        self.assertNotIn(game.food, game.obstacles)
+
+    def test_hitting_obstacle_ends_game(self):
+        game = SnakeGame(10, 20, random.Random(1))
+        row, col = game.snake[0]
+        game.obstacles = {(row, col + 1)}
+        self.assertFalse(game.step())
+        self.assertTrue(game.game_over)
+
+    def test_draw_renders_obstacles(self):
+        game = SnakeGame(10, 20, random.Random(1))
+        game.obstacles = {(2, 3)}
+        screen = RecordingScreen()
+        draw(screen, game, [])
+        self.assertIn((2, 3, "#"), screen.characters)
 
     def test_game_speeds_up(self):
         game = SnakeGame(10, 20)

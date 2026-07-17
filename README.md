@@ -7,7 +7,8 @@ python3 snake.py
 ```
 
 Move with the arrow keys or WASD. Press `P` for the pause menu and `Q` to quit.
-The snake becomes faster as the round continues. The best three scores persist in
+Avoid the `#` obstacles scattered around the board. The snake becomes faster as
+the round continues. The best three scores persist in
 `~/.snake_highscores.json`; use `--scores PATH` to choose another location.
 
 Run the tests with:
